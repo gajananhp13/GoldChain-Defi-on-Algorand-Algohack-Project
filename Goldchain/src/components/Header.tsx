@@ -323,7 +323,8 @@ export default function Header() {
               >
                 <HStack>
                   <Image 
-                    src="https://pawallet.blob.core.windows.net/media/pera-wallet-logo.svg" 
+                    src="/peralogo.png" 
+                    fallbackSrc="/peralogo.png"
                     boxSize="50px" 
                     alt="Pera Wallet" 
                   />
@@ -362,6 +363,7 @@ export default function Header() {
                 <HStack>
                   <Image 
                     src="https://myalgo.com/assets/images/my-algo-logo-black.svg" 
+                    fallbackSrc="/algo_logo.png"
                     boxSize="50px" 
                     alt="MyAlgo Wallet" 
                   />
@@ -388,7 +390,7 @@ export default function Header() {
               
               <Divider />
               
-              <Text fontSize="sm" color="gray.500" textAlign="center">
+              <Text fontSize="sm" color={useColorModeValue('gray.500', 'gray.400')} textAlign="center">
                 By connecting your wallet, you agree to the Terms of Service and Privacy Policy
               </Text>
             </VStack>

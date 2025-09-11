@@ -54,6 +54,9 @@ const Buy = () => {
   const toast = useToast();
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const bgColor = useColorModeValue('white', 'gray.700');
+  const summaryBg = useColorModeValue('gray.50', 'gray.600');
+  const labelColor = useColorModeValue('gray.600', 'gray.200');
+  const valueColor = useColorModeValue('gray.800', 'whiteAlpha.900');
 
   useEffect(() => {
     const amount = parseFloat(buyAmount.toString());
@@ -182,10 +185,10 @@ const Buy = () => {
                         </Slider>
                       </Box>
                     </FormControl>
-                    <Box p={4} bg="gray.50" borderRadius="md">
-                      <HStack justify="space-between"><Text>You Pay:</Text><Text fontWeight="bold">{formatBalance(buyAlgoAmount)} ALGO</Text></HStack>
-                      <HStack justify="space-between" mt={2}><Text>You Receive:</Text><Text fontWeight="bold">{buyAmount ? formatBalance(buyAmount) : '0'} vGold</Text></HStack>
-                      <HStack justify="space-between" mt={2}><Text>Exchange Rate:</Text><Text>1 vGold = {formatBalance(vGoldPrice)} ALGO</Text></HStack>
+                    <Box p={4} bg={summaryBg} borderRadius="md">
+                      <HStack justify="space-between"><Text color={labelColor}>You Pay:</Text><Text fontWeight="bold" color={valueColor}>{formatBalance(buyAlgoAmount)} ALGO</Text></HStack>
+                      <HStack justify="space-between" mt={2}><Text color={labelColor}>You Receive:</Text><Text fontWeight="bold" color={valueColor}>{buyAmount ? formatBalance(buyAmount) : '0'} vGold</Text></HStack>
+                      <HStack justify="space-between" mt={2}><Text color={labelColor}>Exchange Rate:</Text><Text color={valueColor}>1 vGold = {formatBalance(vGoldPrice)} ALGO</Text></HStack>
                     </Box>
                     {errorMessage && <Alert status="error"><AlertIcon />{errorMessage}</Alert>}
                     <Button colorScheme="gold" size="lg" leftIcon={<FaCoins />} onClick={handleBuy} isLoading={isLoading} loadingText="Processing..." isDisabled={!isConnected || buyAmount === '' || parseFloat(buyAmount.toString()) <= 0}>Buy vGold</Button>
@@ -209,10 +212,10 @@ const Buy = () => {
                         </Slider>
                       </Box>
                     </FormControl>
-                    <Box p={4} bg="gray.50" borderRadius="md">
-                      <HStack justify="space-between"><Text>You Sell:</Text><Text fontWeight="bold">{sellAmount ? formatBalance(sellAmount) : '0'} vGold</Text></HStack>
-                      <HStack justify="space-between" mt={2}><Text>You Receive:</Text><Text fontWeight="bold">{formatBalance(sellAlgoAmount)} ALGO</Text></HStack>
-                      <HStack justify="space-between" mt={2}><Text>Exchange Rate:</Text><Text>1 vGold = {formatBalance(vGoldPrice)} ALGO</Text></HStack>
+                    <Box p={4} bg={summaryBg} borderRadius="md">
+                      <HStack justify="space-between"><Text color={labelColor}>You Sell:</Text><Text fontWeight="bold" color={valueColor}>{sellAmount ? formatBalance(sellAmount) : '0'} vGold</Text></HStack>
+                      <HStack justify="space-between" mt={2}><Text color={labelColor}>You Receive:</Text><Text fontWeight="bold" color={valueColor}>{formatBalance(sellAlgoAmount)} ALGO</Text></HStack>
+                      <HStack justify="space-between" mt={2}><Text color={labelColor}>Exchange Rate:</Text><Text color={valueColor}>1 vGold = {formatBalance(vGoldPrice)} ALGO</Text></HStack>
                     </Box>
                     {errorMessage && <Alert status="error"><AlertIcon />{errorMessage}</Alert>}
                     <Button colorScheme="red" size="lg" leftIcon={<FaExchangeAlt />} onClick={handleSell} isLoading={isLoading} loadingText="Processing..." isDisabled={!isConnected || sellAmount === '' || parseFloat(sellAmount.toString()) <= 0}>Sell vGold</Button>
