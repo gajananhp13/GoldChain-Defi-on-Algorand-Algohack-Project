@@ -1,1 +1,0 @@
-{"version":3,"file":"pera.js","sourceRoot":"","sources":["../../src/services/pera.ts"],"names":[],"mappings":";;;AAAA,iDAAwD;AAExD,MAAa,WAAW;IAGtB;QACE,IAAI,CAAC,IAAI,GAAG,IAAI,2BAAiB,EAAE,CAAC;IACtC,CAAC;IAED,sFAAsF;IACtF,aAAa;QACX,OAAO,gCAAgC,CAAC;IAC1C,CAAC;CACF;AAXD,kCAWC;AAEY,QAAA,WAAW,GAAG,IAAI,WAAW,EAAE,CAAC"}

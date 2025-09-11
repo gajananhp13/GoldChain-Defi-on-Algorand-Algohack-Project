@@ -1,1 +1,0 @@
-{"version":3,"file":"algorand.d.ts","sourceRoot":"","sources":["../../src/services/algorand.ts"],"names":[],"mappings":"AAAA,OAAgB,EAAE,OAAO,EAAE,OAAO,EAAE,MAAM,SAAS,CAAC;AAGpD,qBAAa,eAAe;IACnB,KAAK,EAAE,OAAO,CAAC;IACf,OAAO,CAAC,EAAE,OAAO,CAAC;;IAcnB,iBAAiB,CAAC,OAAO,EAAE,MAAM,GAAG,OAAO,CAAC,MAAM,CAAC;IAMnD,kBAAkB;CAGzB;AAED,eAAO,MAAM,eAAe,iBAAwB,CAAC"}
