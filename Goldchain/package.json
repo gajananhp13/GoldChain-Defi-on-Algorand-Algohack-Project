@@ -7,6 +7,10 @@
     "@chakra-ui/react": "^2.5.1",
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
+    "@perawallet/connect": "^1.4.2",
+    "@randlabs/myalgo-connect": "^1.4.2",
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
@@ -15,6 +19,7 @@
     "@types/node": "^16.18.12",
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
+    "algosdk": "^3.0.0",
     "axios": "^1.8.4",
     "chart.js": "^4.4.8",
     "coingecko-api": "^1.0.10",
@@ -25,11 +30,9 @@
     "react-icons": "^4.7.1",
     "react-router-dom": "^6.8.2",
     "react-scripts": "5.0.1",
+    "three": "^0.161.0",
     "typescript": "^4.9.5",
-    "web-vitals": "^2.1.4",
-    "algosdk": "^3.0.0",
-    "@perawallet/connect": "^1.4.2",
-    "@randlabs/myalgo-connect": "^1.4.2"
+    "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",

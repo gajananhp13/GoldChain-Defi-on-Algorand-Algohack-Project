@@ -29,6 +29,12 @@ declare module '*.gif' {
   export default src;
 }
 
+// 3D assets
+declare module '*.glb' {
+  const src: string;
+  export default src;
+}
+
 // Petra Wallet type definitions
 interface PetraWallet {
   connect: () => Promise<{ address: string, publicKey: string }>;
