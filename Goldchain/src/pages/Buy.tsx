@@ -47,8 +47,10 @@ const Buy = () => {
   const [buyAlgoAmount, setBuyAlgoAmount] = useState<number>(0);
   const [sellAlgoAmount, setSellAlgoAmount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [sliderValue, setSliderValue] = useState<number>(0);
-  const [showTooltip, setShowTooltip] = useState<boolean>(false);
+  const [buySliderValue, setBuySliderValue] = useState<number>(0);
+  const [sellSliderValue, setSellSliderValue] = useState<number>(0);
+  const [showBuyTooltip, setShowBuyTooltip] = useState<boolean>(false);
+  const [showSellTooltip, setShowSellTooltip] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   
   const toast = useToast();
@@ -73,19 +75,24 @@ const Buy = () => {
   };
 
   const handleAmountChange = (type: 'buy' | 'sell', value: string) => {
-    if (type === 'buy') setBuyAmount(value);
-    else setSellAmount(value);
+    // Allow empty string for controlled input, otherwise keep the raw user input (numeric string)
+    const nextValue = value === '' ? '' : value;
+    if (type === 'buy') setBuyAmount(nextValue);
+    else setSellAmount(nextValue);
   };
 
-  const handleSliderChange = (val: number, type: 'buy' | 'sell') => {
-    setSliderValue(val);
-    if (type === 'buy') {
-      const percentAmount = (parseFloat(balance) * val) / 100;
-      setBuyAmount(formatBalance(percentAmount / vGoldPrice));
-    } else {
-      const percentAmount = (vGoldBalance * val) / 100;
-      setSellAmount(formatBalance(percentAmount));
-    }
+  const handleBuySliderChange = (val: number) => {
+    setBuySliderValue(val);
+    const algoBalance = parseFloat(balance);
+    const percentAmount = (algoBalance * val) / 100;
+    const computedBuyVGold = vGoldPrice > 0 ? percentAmount / vGoldPrice : 0;
+    setBuyAmount(formatBalance(computedBuyVGold));
+  };
+
+  const handleSellSliderChange = (val: number) => {
+    setSellSliderValue(val);
+    const percentAmount = (vGoldBalance * val) / 100;
+    setSellAmount(formatBalance(percentAmount));
   };
 
   const handleBuy = async () => {
@@ -98,7 +105,7 @@ const Buy = () => {
       
       await buyGold(amount);
       setBuyAmount('');
-      setSliderValue(0);
+      setBuySliderValue(0);
     } catch (error: any) {
       setErrorMessage(error.message);
     } finally {
@@ -116,7 +123,7 @@ const Buy = () => {
 
       await sellGold(amount);
       setSellAmount('');
-      setSliderValue(0);
+      setSellSliderValue(0);
     } catch (error: any) {
       setErrorMessage(error.message);
     } finally {
@@ -176,12 +183,12 @@ const Buy = () => {
                         <InputRightAddon children="vGold" />
                       </InputGroup>
                       <Box pt={6} pb={2}>
-                        <Slider defaultValue={0} min={0} max={100} colorScheme="gold" onChange={(v) => handleSliderChange(v, 'buy')} onMouseEnter={() => setShowTooltip(true)} onMouseLeave={() => setShowTooltip(false)} isDisabled={!isConnected} value={sliderValue}>
+                        <Slider defaultValue={0} min={0} max={100} colorScheme="gold" onChange={handleBuySliderChange} onMouseEnter={() => setShowBuyTooltip(true)} onMouseLeave={() => setShowBuyTooltip(false)} isDisabled={!isConnected} value={buySliderValue}>
                           <SliderMark value={25} mt='1' ml='-2.5' fontSize='sm'>25%</SliderMark>
                           <SliderMark value={50} mt='1' ml='-2.5' fontSize='sm'>50%</SliderMark>
                           <SliderMark value={75} mt='1' ml='-2.5' fontSize='sm'>75%</SliderMark>
                           <SliderTrack><SliderFilledTrack /></SliderTrack>
-                          <Tooltip hasArrow bg='gold.500' color='white' placement='top' isOpen={showTooltip} label={`${sliderValue}%`}><SliderThumb boxSize={6}><Box color='gold.500' as={FaCoins} /></SliderThumb></Tooltip>
+                          <Tooltip hasArrow bg='gold.500' color='white' placement='top' isOpen={showBuyTooltip} label={`${buySliderValue}%`}><SliderThumb boxSize={6}><Box color='gold.500' as={FaCoins} /></SliderThumb></Tooltip>
                         </Slider>
                       </Box>
                     </FormControl>
@@ -203,12 +210,12 @@ const Buy = () => {
                         <InputRightAddon children="vGold" />
                       </InputGroup>
                       <Box pt={6} pb={2}>
-                        <Slider defaultValue={0} min={0} max={100} colorScheme="red" onChange={(v) => handleSliderChange(v, 'sell')} onMouseEnter={() => setShowTooltip(true)} onMouseLeave={() => setShowTooltip(false)} isDisabled={!isConnected} value={sliderValue}>
+                        <Slider defaultValue={0} min={0} max={100} colorScheme="red" onChange={handleSellSliderChange} onMouseEnter={() => setShowSellTooltip(true)} onMouseLeave={() => setShowSellTooltip(false)} isDisabled={!isConnected} value={sellSliderValue}>
                           <SliderMark value={25} mt='1' ml='-2.5' fontSize='sm'>25%</SliderMark>
                           <SliderMark value={50} mt='1' ml='-2.5' fontSize='sm'>50%</SliderMark>
                           <SliderMark value={75} mt='1' ml='-2.5' fontSize='sm'>75%</SliderMark>
                           <SliderTrack><SliderFilledTrack /></SliderTrack>
-                          <Tooltip hasArrow bg='red.500' color='white' placement='top' isOpen={showTooltip} label={`${sliderValue}%`}><SliderThumb boxSize={6}><Box color='red.500' as={FaExchangeAlt} /></SliderThumb></Tooltip>
+                          <Tooltip hasArrow bg='red.500' color='white' placement='top' isOpen={showSellTooltip} label={`${sellSliderValue}%`}><SliderThumb boxSize={6}><Box color='red.500' as={FaExchangeAlt} /></SliderThumb></Tooltip>
                         </Slider>
                       </Box>
                     </FormControl>
