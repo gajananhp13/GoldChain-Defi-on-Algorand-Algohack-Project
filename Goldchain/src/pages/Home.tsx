@@ -36,8 +36,7 @@ import {
 } from 'react-icons/fa';
 import { useWallet } from '../context/WalletContext';
 import { usePrice } from '../context/PriceContext';
-// import goldVaultImg from '../assets/GoldVault.png';
-import GoldModelCanvas from '../components/GoldModel';
+import goldVaultImg from '../assets/GoldVault.png';
 
 const Feature = ({ title, text, icon, delay }: {
   title: string;
@@ -267,7 +266,15 @@ const Home = () => {
                   transition: 'transform 0.1s ease-out',
                 }}
               >
-                <GoldModelCanvas modelUrl={'/3dmods/1629a5df-1c31-4d36-9f93-6617ed0bc647.glb'} />
+                <Image
+                  alt={'Secure vault with gold assets and Algorand Pera branding'}
+                  fit={'contain'}
+                  align={'center'}
+                  w={'100%'}
+                  h={'100%'}
+                  src={goldVaultImg}
+                  className="gold-stack"
+                />
               </Box>
             </ScaleFade>
           </Flex>

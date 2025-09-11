@@ -30,10 +30,7 @@ declare module '*.gif' {
 }
 
 // 3D assets
-declare module '*.glb' {
-  const src: string;
-  export default src;
-}
+// removed glb typing as 3D viewer is no longer used
 
 // Petra Wallet type definitions
 interface PetraWallet {
