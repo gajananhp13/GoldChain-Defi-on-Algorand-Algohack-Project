@@ -1,0 +1,1 @@
+{"version":3,"file":"history.js","sourceRoot":"","sources":["../../src/commands/history.ts"],"names":[],"mappings":";;AAEA,0BAIC;AAJD,SAAwB,OAAO,CAAC,GAAa;IAC3C,GAAG,CAAC,OAAO,CAAC,SAAS,EAAE,KAAK,EAAE,GAAG,EAAE,EAAE;QACnC,MAAM,GAAG,CAAC,KAAK,CAAC,mDAAmD,CAAC,CAAC;IACvE,CAAC,CAAC,CAAC;AACL,CAAC"}
