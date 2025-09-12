@@ -12,7 +12,7 @@ from algokit_utils import (
     get_localnet_default_account,
 )
 from algopy import Account
-from lending_contract import LendingContract
+from .contract import LendingContract
 
 
 def deploy_lending_contract(vgold_app_id: int) -> ApplicationClient:

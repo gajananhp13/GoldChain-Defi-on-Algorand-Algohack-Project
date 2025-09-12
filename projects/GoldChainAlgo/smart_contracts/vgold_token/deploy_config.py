@@ -12,7 +12,7 @@ from algokit_utils import (
     get_localnet_default_account,
 )
 from algopy import Account
-from vgold_token import VGoldToken
+from .contract import VGoldToken
 
 
 def deploy_vgold_token() -> ApplicationClient:

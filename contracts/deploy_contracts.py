@@ -8,7 +8,7 @@ import os
 from typing import Dict, List, Tuple
 from algosdk import account, mnemonic
 from algosdk.v2client import algod
-from algosdk.future import transaction
+from algosdk import transaction
 from algosdk.encoding import encode_address
 import base64
 
@@ -243,11 +243,14 @@ REACT_APP_ORACLE_ADDRESS={self.contract_addresses['oracle']}
 def main():
     """Main deployment function"""
     # Configuration
-    ALGOD_URL = "https://testnet-api.algonode.cloud"
-    ALGOD_TOKEN = ""
+    ALGOD_URL = os.getenv("ALGOD_URL", "https://testnet-api.algonode.cloud")
+    ALGOD_TOKEN = os.getenv("ALGOD_TOKEN", "")
     
-    # Manager mnemonic (replace with your own)
-    MANAGER_MNEMONIC = "your manager mnemonic phrase here"
+    # Manager mnemonic (read securely from environment)
+    MANAGER_MNEMONIC = os.getenv("DEPLOYER_MNEMONIC", "").strip()
+    if not MANAGER_MNEMONIC:
+        print("DEPLOYER_MNEMONIC is not set. Please set a funded TestNet 25-word mnemonic in environment.")
+        return 1
     
     try:
         # Initialize Algod client

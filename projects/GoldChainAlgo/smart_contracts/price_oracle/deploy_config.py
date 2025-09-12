@@ -12,7 +12,7 @@ from algokit_utils import (
     get_localnet_default_account,
 )
 from algopy import Account
-from price_oracle import PriceOracle
+from .contract import PriceOracle
 
 
 def deploy_price_oracle() -> ApplicationClient:

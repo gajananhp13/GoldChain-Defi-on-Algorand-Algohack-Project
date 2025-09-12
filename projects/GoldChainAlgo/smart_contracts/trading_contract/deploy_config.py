@@ -12,7 +12,7 @@ from algokit_utils import (
     get_localnet_default_account,
 )
 from algopy import Account
-from trading_contract import TradingContract
+from .contract import TradingContract
 
 
 def deploy_trading_contract(vgold_app_id: int, oracle_address: str) -> ApplicationClient:
