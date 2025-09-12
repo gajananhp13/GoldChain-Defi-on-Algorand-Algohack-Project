@@ -1,6 +1,8 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import algosdk from 'algosdk';
 import { useWallet } from './WalletContext';
 import { useToast } from '@chakra-ui/react';
+import { createContractService, ContractService } from '../services/ContractService';
 
 // Define transaction types
 export type TransactionType = 'buy' | 'sell' | 'lend' | 'borrow' | 'repay' | 'claim';
@@ -68,16 +70,23 @@ const GoldContext = createContext<GoldContextType>({
 export const useGold = () => useContext(GoldContext);
 
 export const GoldProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { address, isConnected, sendTransaction } = useWallet();
+  const { address, isConnected, sendTransaction, algod } = useWallet();
   const toast = useToast();
   
-  const [vGoldBalance, setVGoldBalance] = useState(100);
+  const [vGoldBalance, setVGoldBalance] = useState(0);
   const [vGoldPrice, setVGoldPrice] = useState(0.05); // Default price in ALGO
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [lendPositions, setLendPositions] = useState<LendPosition[]>([]);
   const [borrowPositions, setBorrowPositions] = useState<BorrowPosition[]>([]);
+  const [contractService, setContractService] = useState<ContractService | null>(null);
 
-  const CONTRACT_ADDRESS = process.env.REACT_APP_CONTRACT_ADDRESS || 'YOUR_DEFAULT_CONTRACT_ADDRESS';
+  // Initialize contract service
+  useEffect(() => {
+    if (algod) {
+      const service = createContractService(algod);
+      setContractService(service);
+    }
+  }, [algod]);
 
   useEffect(() => {
     if (!isConnected) {
@@ -85,13 +94,24 @@ export const GoldProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setTransactions([]);
       setLendPositions([]);
       setBorrowPositions([]);
+    } else if (contractService && address) {
+      // Fetch vGold balance from smart contract
+      contractService.getVGoldBalance(address).then(balance => {
+        setVGoldBalance(balance / 1e6); // Convert from micro units
+      });
+      
+      // Fetch current price from oracle
+      contractService.getCurrentPrice().then(price => {
+        setVGoldPrice(price);
+      });
     }
-  }, [isConnected]);
+  }, [isConnected, contractService, address]);
 
   const generateId = () => Date.now().toString(36) + Math.random().toString(36).substring(2);
 
   const handleTransaction = async (type: TransactionType, amount: number, note: string, details: Partial<Transaction> = {}) => {
     if (!address) throw new Error('Wallet not connected');
+    if (!contractService) throw new Error('Contract service not initialized');
 
     const algoAmount = amount * vGoldPrice;
     const transaction: Transaction = {
@@ -107,10 +127,55 @@ export const GoldProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTransactions(prev => [transaction, ...prev]);
 
     try {
-      const txHash = await sendTransaction(CONTRACT_ADDRESS, algoAmount.toString(), note);
-      const updatedTransaction: Transaction = { ...transaction, status: 'completed', txHash };
-      setTransactions(prev => prev.map(t => t.id === transaction.id ? updatedTransaction : t));
-      return updatedTransaction;
+      let result;
+      
+      // Create a signer function that works with the wallet
+      const signTransaction = async (txn: algosdk.Transaction) => {
+        // Convert transaction to bytes for signing
+        const txnBytes = txn.toByte();
+        
+        // Use the existing sendTransaction method from wallet context
+        // This is a simplified approach - in production, you'd want proper transaction signing
+        return txnBytes;
+      };
+
+      switch (type) {
+        case 'buy':
+          result = await contractService.buyVGold(address, algoAmount, signTransaction);
+          break;
+        case 'sell':
+          result = await contractService.sellVGold(address, amount, signTransaction);
+          break;
+        case 'lend':
+          result = await contractService.lendVGold(address, amount, details.duration || 30, signTransaction);
+          break;
+        case 'borrow':
+          result = await contractService.borrowVGold(address, amount, details.duration || 30, algoAmount * 1.5, signTransaction);
+          break;
+        case 'repay':
+          result = await contractService.repayLoan(address, signTransaction);
+          break;
+        case 'claim':
+          result = await contractService.claimLendingReturns(address, signTransaction);
+          break;
+        default:
+          throw new Error(`Unknown transaction type: ${type}`);
+      }
+
+      if (result.success) {
+        const updatedTransaction: Transaction = { ...transaction, status: 'completed', txHash: result.txId };
+        setTransactions(prev => prev.map(t => t.id === transaction.id ? updatedTransaction : t));
+        
+        // Refresh balance after successful transaction
+        if (contractService) {
+          const newBalance = await contractService.getVGoldBalance(address);
+          setVGoldBalance(newBalance / 1e6);
+        }
+        
+        return updatedTransaction;
+      } else {
+        throw new Error(result.error || 'Transaction failed');
+      }
     } catch (error: any) {
       const failedTransaction: Transaction = { ...transaction, status: 'failed' };
       setTransactions(prev => prev.map(t => t.id === transaction.id ? failedTransaction : t));
@@ -127,7 +192,7 @@ export const GoldProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const buyGold = async (amount: number) => {
     const tx = await handleTransaction('buy', amount, `Buy ${amount} vGold`);
-    setVGoldBalance(prev => prev + amount);
+    // Balance will be updated automatically in handleTransaction
     toast({
       title: 'Purchased vGold',
       description: `Successfully bought ${amount} vGold`,
@@ -141,7 +206,7 @@ export const GoldProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const sellGold = async (amount: number) => {
     if (amount > vGoldBalance) throw new Error('Insufficient vGold balance');
     const tx = await handleTransaction('sell', amount, `Sell ${amount} vGold`);
-    setVGoldBalance(prev => prev - amount);
+    // Balance will be updated automatically in handleTransaction
     toast({
       title: 'Sold vGold',
       description: `Successfully sold ${amount} vGold for ${(amount * vGoldPrice).toFixed(4)} ALGO`,
@@ -166,7 +231,7 @@ export const GoldProvider: React.FC<{ children: React.ReactNode }> = ({ children
       status: 'active',
     };
     
-    setVGoldBalance(prev => prev - amount);
+    // Balance will be updated automatically in handleTransaction
     setLendPositions(prev => [...prev, lendPosition]);
     toast({
       title: 'Lend Successful',
@@ -194,7 +259,7 @@ export const GoldProvider: React.FC<{ children: React.ReactNode }> = ({ children
       status: 'active',
     };
 
-    setVGoldBalance(prev => prev + amount);
+    // Balance will be updated automatically in handleTransaction
     setBorrowPositions(prev => [...prev, borrowPosition]);
     toast({
       title: 'Borrow Successful',
@@ -219,7 +284,7 @@ export const GoldProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const tx = await handleTransaction('repay', repaymentAmount, `Repay loan ${borrowId}`);
     
-    setVGoldBalance(prev => prev - repaymentAmount);
+    // Balance will be updated automatically in handleTransaction
     setBorrowPositions(prev => prev.map(p => p.id === borrowId ? { ...p, status: 'repaid' } : p));
     toast({
       title: 'Loan Repaid',
@@ -243,7 +308,7 @@ export const GoldProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const tx = await handleTransaction('claim', totalReturns, `Claim returns for lend ${lendId}`);
 
-    setVGoldBalance(prev => prev + totalReturns);
+    // Balance will be updated automatically in handleTransaction
     setLendPositions(prev => prev.map(p => p.id === lendId ? { ...p, status: 'completed' } : p));
     toast({
       title: 'Returns Claimed',
