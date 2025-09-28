@@ -5,6 +5,79 @@
 
 import algosdk from 'algosdk';
 
+// Client-side validation utilities
+export interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+}
+
+export function validateAlgorandAddress(address: string): boolean {
+  try {
+    return algosdk.isValidAddress(address);
+  } catch {
+    return false;
+  }
+}
+
+export function validateAmount(amount: number, minAmount: number = 0.001, maxAmount: number = 1000000): ValidationResult {
+  const errors: string[] = [];
+  
+  if (!Number.isFinite(amount)) {
+    errors.push('Amount must be a valid number');
+  } else if (amount <= 0) {
+    errors.push('Amount must be positive');
+  } else if (amount < minAmount) {
+    errors.push(`Amount must be at least ${minAmount}`);
+  } else if (amount > maxAmount) {
+    errors.push(`Amount must not exceed ${maxAmount}`);
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+
+export function validateTransactionInputs(
+  to: string,
+  amount: number,
+  balance: number,
+  note?: string
+): ValidationResult {
+  const errors: string[] = [];
+  
+  // Validate recipient address
+  if (!validateAlgorandAddress(to)) {
+    errors.push('Invalid recipient address');
+  }
+  
+  // Validate amount
+  const amountValidation = validateAmount(amount);
+  if (!amountValidation.isValid) {
+    errors.push(...amountValidation.errors);
+  } else if (amount > balance) {
+    errors.push('Insufficient balance');
+  }
+  
+  // Validate note
+  if (note && note.length > 1000) {
+    errors.push('Note too long (maximum 1000 characters)');
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+
+export function sanitizeInput(input: string): string {
+  return input
+    .trim()
+    .replace(/[<>]/g, '') // Remove potential HTML tags
+    .replace(/['"]/g, '') // Remove quotes
+    .substring(0, 1000); // Limit length
+}
+
 export interface ContractConfig {
   vgoldAppId: number;
   tradingAppId: number;
@@ -26,26 +99,36 @@ export interface TransactionResult {
 export class ContractService {
   private algod: algosdk.Algodv2;
   private config: ContractConfig;
+  private isMock: boolean;
+  private mockBalances: Record<string, number> = {};
 
   constructor(algod: algosdk.Algodv2, config: ContractConfig) {
     this.algod = algod;
     this.config = config;
     
-    // Validate contract addresses are properly configured
+    // Determine mock mode first, then validate
+    this.isMock = this.checkIsMockMode(config);
     this.validateContractConfig();
   }
 
-  private validateContractConfig() {
-    // Check if we're in development mode (using placeholder addresses)
-    const isDevelopmentMode = this.config.vgoldAddress.startsWith('DEVELOPMENT_PLACEHOLDER_') ||
-                             this.config.tradingAddress.startsWith('DEVELOPMENT_PLACEHOLDER_') ||
-                             this.config.lendingAddress.startsWith('DEVELOPMENT_PLACEHOLDER_') ||
-                             this.config.oracleAddress.startsWith('DEVELOPMENT_PLACEHOLDER_');
+  private checkIsMockMode(config: ContractConfig): boolean {
+    const placeholder = (v: string) => v && v.startsWith('DEVELOPMENT_PLACEHOLDER_');
+    const missingIds = !config.vgoldAppId && !config.tradingAppId && !config.lendingAppId && !config.oracleAppId;
+    return (
+      placeholder(config.vgoldAddress) ||
+      placeholder(config.tradingAddress) ||
+      placeholder(config.lendingAddress) ||
+      placeholder(config.oracleAddress) ||
+      missingIds
+    );
+  }
 
-    if (isDevelopmentMode) {
+  private validateContractConfig() {
+    // In mock mode, skip strict validation
+    if (this.isMock) {
       console.warn('⚠️  Running in development mode with placeholder contract addresses.');
-      console.warn('   Smart contract operations will be disabled until real addresses are configured.');
-      return; // Skip validation in development mode
+      console.warn('   Mock transactions are enabled for demos; no on-chain calls will be made.');
+      return;
     }
 
     const requiredAddresses = [
@@ -105,6 +188,10 @@ export class ContractService {
    */
   async getVGoldBalance(address: string): Promise<number> {
     try {
+      if (this.isMock) {
+        const balance = this.mockBalances[address] || 0;
+        return Math.round(balance * 1e6);
+      }
       const accountInfo = await this.algod.accountInformation(address).do();
       
       // Look for vGold token in the account's assets
@@ -144,6 +231,22 @@ export class ContractService {
     signTransaction: (txn: algosdk.Transaction) => Promise<Uint8Array>
   ): Promise<TransactionResult> {
     try {
+      // Client-side validation
+      const validation = validateAmount(algoAmount, 0.001, 1000000);
+      if (!validation.isValid) {
+        return {
+          success: false,
+          txId: '',
+          error: validation.errors.join(', ')
+        };
+      }
+      
+      if (this.isMock) {
+        const price = await this.getCurrentPrice();
+        const purchased = algoAmount / price;
+        this.mockBalances[buyerAddress] = (this.mockBalances[buyerAddress] || 0) + purchased;
+        return { success: true, txId: `MOCK-${Date.now()}`, appId: this.config.tradingAppId };
+      }
       this.ensureValidAddress(buyerAddress, 'Buyer');
       this.ensureValidAddress(this.config.tradingAddress, 'Trading (receiver)');
       const params = await this.algod.getTransactionParams().do();
@@ -201,6 +304,21 @@ export class ContractService {
     signTransaction: (txn: algosdk.Transaction) => Promise<Uint8Array>
   ): Promise<TransactionResult> {
     try {
+      // Client-side validation
+      const validation = validateAmount(vgoldAmount, 0.001, 1000000);
+      if (!validation.isValid) {
+        return {
+          success: false,
+          txId: '',
+          error: validation.errors.join(', ')
+        };
+      }
+      
+      if (this.isMock) {
+        const current = this.mockBalances[sellerAddress] || 0;
+        this.mockBalances[sellerAddress] = Math.max(0, current - vgoldAmount);
+        return { success: true, txId: `MOCK-${Date.now()}`, appId: this.config.tradingAppId };
+      }
       this.ensureValidAddress(sellerAddress, 'Seller');
       this.ensureValidAddress(this.config.tradingAddress, 'Trading (receiver)');
       const params = await this.algod.getTransactionParams().do();
@@ -263,6 +381,11 @@ export class ContractService {
     signTransaction: (txn: algosdk.Transaction) => Promise<Uint8Array>
   ): Promise<TransactionResult> {
     try {
+      if (this.isMock) {
+        const current = this.mockBalances[lenderAddress] || 0;
+        this.mockBalances[lenderAddress] = Math.max(0, current - amount);
+        return { success: true, txId: `MOCK-${Date.now()}`, appId: this.config.lendingAppId };
+      }
       this.ensureValidAddress(lenderAddress, 'Lender');
       this.ensureValidAddress(this.config.lendingAddress, 'Lending (receiver)');
       const params = await this.algod.getTransactionParams().do();
@@ -327,6 +450,10 @@ export class ContractService {
     signTransaction: (txn: algosdk.Transaction) => Promise<Uint8Array>
   ): Promise<TransactionResult> {
     try {
+      if (this.isMock) {
+        this.mockBalances[borrowerAddress] = (this.mockBalances[borrowerAddress] || 0) + amount;
+        return { success: true, txId: `MOCK-${Date.now()}`, appId: this.config.lendingAppId };
+      }
       this.ensureValidAddress(borrowerAddress, 'Borrower');
       this.ensureValidAddress(this.config.lendingAddress, 'Lending (receiver)');
       const params = await this.algod.getTransactionParams().do();
@@ -387,6 +514,10 @@ export class ContractService {
     signTransaction: (txn: algosdk.Transaction) => Promise<Uint8Array>
   ): Promise<TransactionResult> {
     try {
+      if (this.isMock) {
+        // No balance mutation here due to lack of repayment amount context
+        return { success: true, txId: `MOCK-${Date.now()}`, appId: this.config.lendingAppId };
+      }
       this.ensureValidAddress(borrowerAddress, 'Borrower');
       const params = await this.algod.getTransactionParams().do();
       
@@ -426,6 +557,10 @@ export class ContractService {
     signTransaction: (txn: algosdk.Transaction) => Promise<Uint8Array>
   ): Promise<TransactionResult> {
     try {
+      if (this.isMock) {
+        // Without claim amount context, leave balance unchanged; UI shows success and positions update
+        return { success: true, txId: `MOCK-${Date.now()}`, appId: this.config.lendingAppId };
+      }
       this.ensureValidAddress(lenderAddress, 'Lender');
       const params = await this.algod.getTransactionParams().do();
       

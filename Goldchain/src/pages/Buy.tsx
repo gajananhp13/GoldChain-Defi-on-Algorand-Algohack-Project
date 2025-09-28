@@ -31,10 +31,13 @@ import {
   Tooltip,
   Alert,
   AlertIcon,
+  FormErrorMessage,
+  FormHelperText,
 } from '@chakra-ui/react';
 import { FaCoins, FaExchangeAlt } from 'react-icons/fa';
 import { useWallet } from '../context/WalletContext';
 import { useGold } from '../context/GoldContext';
+import { validateAmount, sanitizeInput } from '../services/ContractService';
 
 const Buy = () => {
   const { balance, isConnected } = useWallet();
@@ -47,6 +50,8 @@ const Buy = () => {
   const [sliderValue, setSliderValue] = useState<number>(0);
   const [showTooltip, setShowTooltip] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [buyValidationError, setBuyValidationError] = useState<string>('');
+  const [sellValidationError, setSellValidationError] = useState<string>('');
   
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const bgColor = useColorModeValue('white', 'gray.700');
@@ -69,8 +74,28 @@ const Buy = () => {
   };
 
   const handleAmountChange = (type: 'buy' | 'sell', value: string) => {
-    if (type === 'buy') setBuyAmount(value);
-    else setSellAmount(value);
+    const sanitizedValue = sanitizeInput(value);
+    const numericValue = parseFloat(sanitizedValue);
+    
+    if (type === 'buy') {
+      setBuyAmount(sanitizedValue);
+      // Validate buy amount
+      if (sanitizedValue && !isNaN(numericValue)) {
+        const validation = validateAmount(numericValue, 0.001, parseFloat(balance) / vGoldPrice);
+        setBuyValidationError(validation.isValid ? '' : validation.errors.join(', '));
+      } else {
+        setBuyValidationError('');
+      }
+    } else {
+      setSellAmount(sanitizedValue);
+      // Validate sell amount
+      if (sanitizedValue && !isNaN(numericValue)) {
+        const validation = validateAmount(numericValue, 0.001, vGoldBalance);
+        setSellValidationError(validation.isValid ? '' : validation.errors.join(', '));
+      } else {
+        setSellValidationError('');
+      }
+    }
   };
 
   const handleSliderChange = (val: number, type: 'buy' | 'sell') => {
@@ -165,12 +190,26 @@ const Buy = () => {
               <TabPanels>
                 <TabPanel>
                   <VStack spacing={6} align="stretch" p={2}>
-                    <FormControl>
+                    <FormControl isInvalid={!!buyValidationError}>
                       <FormLabel>Amount of vGold to buy</FormLabel>
                       <InputGroup size="lg">
-                        <Input type="number" value={buyAmount} onChange={(e) => handleAmountChange('buy', e.target.value)} placeholder="0.0" disabled={!isConnected} />
+                        <Input 
+                          type="number" 
+                          value={buyAmount} 
+                          onChange={(e) => handleAmountChange('buy', e.target.value)} 
+                          placeholder="0.0" 
+                          disabled={!isConnected}
+                          min="0.001"
+                          max={parseFloat(balance) / vGoldPrice}
+                          step="0.001"
+                        />
                         <InputRightAddon children="vGold" />
                       </InputGroup>
+                      {buyValidationError ? (
+                        <FormErrorMessage>{buyValidationError}</FormErrorMessage>
+                      ) : (
+                        <FormHelperText>Minimum: 0.001 vGold</FormHelperText>
+                      )}
                       <Box pt={6} pb={2}>
                         <Slider defaultValue={0} min={0} max={100} colorScheme="gold" onChange={(v) => handleSliderChange(v, 'buy')} onMouseEnter={() => setShowTooltip(true)} onMouseLeave={() => setShowTooltip(false)} isDisabled={!isConnected} value={sliderValue}>
                           <SliderMark value={25} mt='1' ml='-2.5' fontSize='sm'>25%</SliderMark>
@@ -187,17 +226,41 @@ const Buy = () => {
                       <HStack justify="space-between" mt={2}><Text color={labelColor}>Exchange Rate:</Text><Text color={valueColor}>1 vGold = {formatBalance(vGoldPrice)} ALGO</Text></HStack>
                     </Box>
                     {errorMessage && <Alert status="error"><AlertIcon />{errorMessage}</Alert>}
-                    <Button colorScheme="gold" size="lg" leftIcon={<FaCoins />} onClick={handleBuy} isLoading={isLoading} loadingText="Processing..." isDisabled={!isConnected || buyAmount === '' || parseFloat(buyAmount.toString()) <= 0}>Buy vGold</Button>
+                    <Button 
+                      colorScheme="gold" 
+                      size="lg" 
+                      leftIcon={<FaCoins />} 
+                      onClick={handleBuy} 
+                      isLoading={isLoading} 
+                      loadingText="Processing..." 
+                      isDisabled={!isConnected || buyAmount === '' || parseFloat(buyAmount.toString()) <= 0 || !!buyValidationError}
+                    >
+                      Buy vGold
+                    </Button>
                   </VStack>
                 </TabPanel>
                 <TabPanel>
                   <VStack spacing={6} align="stretch" p={2}>
-                    <FormControl>
+                    <FormControl isInvalid={!!sellValidationError}>
                       <FormLabel>Amount of vGold to sell</FormLabel>
                       <InputGroup size="lg">
-                        <Input type="number" value={sellAmount} onChange={(e) => handleAmountChange('sell', e.target.value)} placeholder="0.0" disabled={!isConnected} />
+                        <Input 
+                          type="number" 
+                          value={sellAmount} 
+                          onChange={(e) => handleAmountChange('sell', e.target.value)} 
+                          placeholder="0.0" 
+                          disabled={!isConnected}
+                          min="0.001"
+                          max={vGoldBalance}
+                          step="0.001"
+                        />
                         <InputRightAddon children="vGold" />
                       </InputGroup>
+                      {sellValidationError ? (
+                        <FormErrorMessage>{sellValidationError}</FormErrorMessage>
+                      ) : (
+                        <FormHelperText>Minimum: 0.001 vGold</FormHelperText>
+                      )}
                       <Box pt={6} pb={2}>
                         <Slider defaultValue={0} min={0} max={100} colorScheme="red" onChange={(v) => handleSliderChange(v, 'sell')} onMouseEnter={() => setShowTooltip(true)} onMouseLeave={() => setShowTooltip(false)} isDisabled={!isConnected} value={sliderValue}>
                           <SliderMark value={25} mt='1' ml='-2.5' fontSize='sm'>25%</SliderMark>
@@ -214,7 +277,17 @@ const Buy = () => {
                       <HStack justify="space-between" mt={2}><Text color={labelColor}>Exchange Rate:</Text><Text color={valueColor}>1 vGold = {formatBalance(vGoldPrice)} ALGO</Text></HStack>
                     </Box>
                     {errorMessage && <Alert status="error"><AlertIcon />{errorMessage}</Alert>}
-                    <Button colorScheme="red" size="lg" leftIcon={<FaExchangeAlt />} onClick={handleSell} isLoading={isLoading} loadingText="Processing..." isDisabled={!isConnected || sellAmount === '' || parseFloat(sellAmount.toString()) <= 0}>Sell vGold</Button>
+                    <Button 
+                      colorScheme="red" 
+                      size="lg" 
+                      leftIcon={<FaExchangeAlt />} 
+                      onClick={handleSell} 
+                      isLoading={isLoading} 
+                      loadingText="Processing..." 
+                      isDisabled={!isConnected || sellAmount === '' || parseFloat(sellAmount.toString()) <= 0 || !!sellValidationError}
+                    >
+                      Sell vGold
+                    </Button>
                   </VStack>
                 </TabPanel>
               </TabPanels>
