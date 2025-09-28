@@ -46,6 +46,12 @@ export type UserPortfolio = {
   transactions: TransactionRecord[];
   lendPositions: LendPosition[];
   borrowPositions: BorrowPosition[];
+  portfolioHistory: Array<{
+    timestamp: number;
+    totalValue: number;
+    vGoldValue: number;
+    algoValue: number;
+  }>;
 };
 
 export type StoreShape = {
@@ -97,6 +103,7 @@ function ensurePortfolio(data: StoreShape, telegramId: string): UserPortfolio {
       transactions: [],
       lendPositions: [],
       borrowPositions: [],
+      portfolioHistory: [],
     };
   }
   return data.portfolios[telegramId];
@@ -179,6 +186,40 @@ export function repayBorrowPosition(telegramId: string, id: string): BorrowPosit
   pf.borrowPositions[idx] = { ...pos, status: 'repaid' };
   writeStore(data);
   return pf.borrowPositions[idx];
+}
+
+export function recordPortfolioSnapshot(telegramId: string, vGoldPrice: number): void {
+  const data = readStore();
+  const pf = ensurePortfolio(data, telegramId);
+  
+  const snapshot = {
+    timestamp: Date.now(),
+    totalValue: pf.algoBalance + (pf.vGoldBalance * vGoldPrice),
+    vGoldValue: pf.vGoldBalance * vGoldPrice,
+    algoValue: pf.algoBalance,
+  };
+  
+  pf.portfolioHistory.push(snapshot);
+  
+  // Keep only last 100 snapshots to prevent file from growing too large
+  if (pf.portfolioHistory.length > 100) {
+    pf.portfolioHistory = pf.portfolioHistory.slice(-100);
+  }
+  
+  writeStore(data);
+}
+
+export function getPortfolioHistory(telegramId: string, days: number = 30): Array<{
+  timestamp: number;
+  totalValue: number;
+  vGoldValue: number;
+  algoValue: number;
+}> {
+  const data = readStore();
+  const pf = ensurePortfolio(data, telegramId);
+  
+  const cutoffTime = Date.now() - (days * 24 * 60 * 60 * 1000);
+  return pf.portfolioHistory.filter(snapshot => snapshot.timestamp >= cutoffTime);
 }
 
 
