@@ -82,7 +82,7 @@ const Feature = ({ title, text, icon, delay }: {
 };
 
 const Home = () => {
-  const { connectWallet, isConnected } = useWallet();
+  const { connectWallet, isConnected, isConnecting, error, retryConnection } = useWallet();
   const { prices } = usePrice();
   const [scrollPosition, setScrollPosition] = useState(0);
   const heroRef = useRef<HTMLDivElement>(null);
@@ -220,6 +220,8 @@ const Home = () => {
                   bg={'gold.500'}
                   _hover={{ bg: 'gold.400' }}
                   onClick={() => connectWallet('pera')}
+                  isLoading={isConnecting}
+                  loadingText="Connecting..."
                   className="gold-bar-shine"
                 >
                   Connect Wallet
@@ -426,32 +428,54 @@ const Home = () => {
           <Text fontSize="lg" mb={8}>
             Join thousands of investors who trust GoldChain for their gold investments. Get started in minutes.
           </Text>
-          <HStack spacing={4} justify="center" wrap="wrap">
-            <Button
-              as={RouterLink}
-              to={isConnected ? "/dashboard" : "#"}
-              onClick={isConnected ? undefined : () => connectWallet('pera')}
-              bg="white"
-              color="gold.500"
-              _hover={{ bg: 'gray.100' }}
-              size="lg"
-              className="glow"
-            >
-              {isConnected ? 'Go to Dashboard' : 'Connect Wallet'}
-            </Button>
-            <Button
-              as={RouterLink}
-              to="/buy"
-              variant="outline"
-              borderColor="white"
-              _hover={{ bg: 'rgba(255,255,255,0.1)' }}
-              size="lg"
-              leftIcon={<FaCoins />}
-              className="shimmer"
-            >
-              Buy vGold
-            </Button>
-          </HStack>
+          <VStack spacing={4}>
+            <HStack spacing={4} justify="center" wrap="wrap">
+              <Button
+                as={RouterLink}
+                to={isConnected ? "/dashboard" : "#"}
+                onClick={isConnected ? undefined : () => connectWallet('pera')}
+                bg="white"
+                color="gold.500"
+                _hover={{ bg: 'gray.100' }}
+                size="lg"
+                isLoading={!isConnected && isConnecting}
+                loadingText="Connecting..."
+                className="glow"
+              >
+                {isConnected ? 'Go to Dashboard' : 'Connect Wallet'}
+              </Button>
+              <Button
+                as={RouterLink}
+                to="/buy"
+                variant="outline"
+                borderColor="white"
+                _hover={{ bg: 'rgba(255,255,255,0.1)' }}
+                size="lg"
+                leftIcon={<FaCoins />}
+                className="shimmer"
+              >
+                Buy vGold
+              </Button>
+            </HStack>
+            {error && (
+              <VStack spacing={2} align="center">
+                <Text fontSize="sm" color="red.200" textAlign="center">
+                  {error}
+                </Text>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  borderColor="red.200"
+                  color="red.200"
+                  _hover={{ bg: 'rgba(255,255,255,0.1)' }}
+                  onClick={retryConnection}
+                  isLoading={isConnecting}
+                >
+                  Retry Connection
+                </Button>
+              </VStack>
+            )}
+          </VStack>
         </Container>
       </Box>
     </Box>

@@ -60,7 +60,7 @@ import logo from '../assets/logo.svg';
 
 export default function Header() {
   const { isOpen, onToggle } = useDisclosure();
-  const { address, balance, connectWallet, disconnectWallet, isConnected, networkName } = useWallet();
+  const { address, balance, connectWallet, disconnectWallet, isConnected, networkName, isConnecting, error, clearError, retryConnection } = useWallet();
   const { vGoldBalance } = useGold();
   const { prices } = usePrice();
   const location = useLocation();
@@ -102,6 +102,7 @@ export default function Header() {
   const handleWalletSelect = async (walletType: 'pera' | 'myalgo') => {
     setSelectedWallet(walletType);
     setConnecting(true);
+    clearError();
     
     try {
       const result = await connectWallet(walletType);
@@ -115,14 +116,7 @@ export default function Header() {
       });
       closeWalletModal();
     } catch (error: any) {
-      toast({
-        title: 'Connection Failed',
-        description: error.message || 'Could not connect wallet',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-        position: 'bottom-right',
-      });
+      // Error handling is done in WalletContext
     } finally {
       setConnecting(false);
       setSelectedWallet(null);
@@ -279,21 +273,41 @@ export default function Header() {
               </Menu>
             </>
           ) : (
-            <Button
-              display={{ base: 'none', md: 'inline-flex' }}
-              fontSize={'sm'}
-              fontWeight={600}
-              color={'white'}
-              bg={'gold.500'}
-              onClick={openWalletModal}
-              leftIcon={<FaWallet />}
-              _hover={{
-                bg: 'gold.400',
-              }}
-              className="connect-button"
-            >
-              Connect Wallet
-            </Button>
+            <VStack spacing={2}>
+              <Button
+                display={{ base: 'none', md: 'inline-flex' }}
+                fontSize={'sm'}
+                fontWeight={600}
+                color={'white'}
+                bg={'gold.500'}
+                onClick={openWalletModal}
+                leftIcon={<FaWallet />}
+                isLoading={isConnecting}
+                loadingText="Connecting..."
+                _hover={{
+                  bg: 'gold.400',
+                }}
+                className="connect-button"
+              >
+                Connect Wallet
+              </Button>
+              {error && (
+                <VStack spacing={1} align="center">
+                  <Text fontSize="xs" color="red.500" textAlign="center">
+                    {error}
+                  </Text>
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    colorScheme="red"
+                    onClick={retryConnection}
+                    isLoading={isConnecting}
+                  >
+                    Retry
+                  </Button>
+                </VStack>
+              )}
+            </VStack>
           )}
         </Stack>
       </Flex>
@@ -407,6 +421,7 @@ interface NavItem {
   children?: Array<NavItem>;
   href?: string;
   icon?: React.ReactElement;
+  external?: boolean;
 }
 
 const NAV_ITEMS: Array<NavItem> = [
@@ -441,6 +456,11 @@ const NAV_ITEMS: Array<NavItem> = [
     label: 'Portfolio',
     href: '/portfolio',
   },
+  {
+    label: 'Telegram Bot',
+    href: 'https://t.me/GoldChainBot',
+    external: true,
+  },
 ];
 
 const DesktopNav = ({ currentPath }: { currentPath: string }) => {
@@ -454,24 +474,37 @@ const DesktopNav = ({ currentPath }: { currentPath: string }) => {
         <Box key={navItem.label}>
           <Popover trigger={'hover'} placement={'bottom-start'}>
             <PopoverTrigger>
-              <Link
-                as={RouterLink}
-                p={2}
-                to={navItem.href ?? '#'}
-                fontSize={'sm'}
-                fontWeight={
-                  currentPath === navItem.href ? 'bold' : 'medium'
-                }
-                color={
-                  currentPath === navItem.href
-                    ? 'gold.500'
-                    : linkColor
-                }
-                position="relative"
-                transition="color .2s ease, transform .2s ease"
-                
-                _after={
-                  {
+              {navItem.external ? (
+                <Link
+                  p={2}
+                  href={navItem.href}
+                  isExternal
+                  fontSize={'sm'}
+                  fontWeight={'medium'}
+                  color={linkColor}
+                  position="relative"
+                  transition="color .2s ease, transform .2s ease"
+                  _hover={{ textDecoration: 'none', color: linkHoverColor, transform: 'translateY(-2px)' }}
+                >
+                  {navItem.label}
+                </Link>
+              ) : (
+                <Link
+                  as={RouterLink}
+                  p={2}
+                  to={navItem.href ?? '#'}
+                  fontSize={'sm'}
+                  fontWeight={
+                    currentPath === navItem.href ? 'bold' : 'medium'
+                  }
+                  color={
+                    currentPath === navItem.href
+                      ? 'gold.500'
+                      : linkColor
+                  }
+                  position="relative"
+                  transition="color .2s ease, transform .2s ease"
+                  _after={{
                     content: '""',
                     position: 'absolute',
                     width: currentPath === navItem.href ? '100%' : '0%',
@@ -480,13 +513,13 @@ const DesktopNav = ({ currentPath }: { currentPath: string }) => {
                     left: 0,
                     background: 'gold.500',
                     transition: 'width .2s ease',
-                  }
-                }
-                _hover={{ textDecoration: 'none', color: linkHoverColor, transform: 'translateY(-2px)' }}
-                sx={{ '&:hover::after': { width: '100%' } }}
-              >
-                {navItem.label}
-              </Link>
+                  }}
+                  _hover={{ textDecoration: 'none', color: linkHoverColor, transform: 'translateY(-2px)' }}
+                  sx={{ '&:hover::after': { width: '100%' } }}
+                >
+                  {navItem.label}
+                </Link>
+              )}
             </PopoverTrigger>
 
             {navItem.children && (
