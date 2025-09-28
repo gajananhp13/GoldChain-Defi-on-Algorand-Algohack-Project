@@ -1,0 +1,41 @@
+{
+  "sessions": {},
+  "portfolios": {
+    "1463314330": {
+      "telegram_id": "1463314330",
+      "algoBalance": 45.2,
+      "vGoldBalance": 1096,
+      "transactions": [
+        {
+          "id": "mffe2femwhmszuw12kg",
+          "timestamp": 1757593965694,
+          "status": "completed",
+          "type": "sell",
+          "amount": 4,
+          "algoAmount": 0.2,
+          "note": "Sell vGold"
+        },
+        {
+          "id": "mffe23hduu2a77upkk",
+          "timestamp": 1757593950241,
+          "status": "completed",
+          "type": "buy",
+          "amount": 1000,
+          "algoAmount": 50,
+          "note": "Buy vGold"
+        },
+        {
+          "id": "mffddirjoraq4pp677",
+          "timestamp": 1757592803647,
+          "status": "completed",
+          "type": "buy",
+          "amount": 100,
+          "algoAmount": 5,
+          "note": "Buy vGold"
+        }
+      ],
+      "lendPositions": [],
+      "borrowPositions": []
+    }
+  }
+}

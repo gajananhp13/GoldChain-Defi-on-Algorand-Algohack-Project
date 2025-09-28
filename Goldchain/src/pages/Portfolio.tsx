@@ -31,11 +31,15 @@ import {
   Alert,
   AlertIcon,
   Spinner,
-  Center
+  Center,
+  StatArrow,
+  Progress,
+  Tooltip,
 } from '@chakra-ui/react';
-import { FaCoins, FaWallet, FaHandHoldingUsd, FaExchangeAlt, FaChartPie } from 'react-icons/fa';
+import { FaCoins, FaWallet, FaHandHoldingUsd, FaExchangeAlt, FaChartPie, FaChartLine, FaTrendingUp, FaTrendingDown } from 'react-icons/fa';
 import { useGold, LendPosition, BorrowPosition } from '../context/GoldContext';
 import { useWallet } from '../context/WalletContext';
+import PriceChart from '../components/PriceChart';
 
 const Portfolio = () => {
   const { vGoldBalance, vGoldPrice, lendPositions, borrowPositions, claimLendReturns, repayLoan } = useGold();
@@ -45,6 +49,28 @@ const Portfolio = () => {
   const [lendingValue, setLendingValue] = useState(0);
   const [borrowingValue, setBorrowingValue] = useState(0);
   const [processingAction, setProcessingAction] = useState<string | null>(null);
+  const [portfolioAnalytics, setPortfolioAnalytics] = useState({
+    totalValueChange24h: 0,
+    totalValueChangePercent24h: 0,
+    totalValueChange7d: 0,
+    totalValueChangePercent7d: 0,
+    bestPerformingAsset: 'vGold',
+    worstPerformingAsset: 'ALGO',
+    diversificationScore: 75,
+    riskScore: 45,
+    sharpeRatio: 1.2,
+  });
+  const [priceChartData, setPriceChartData] = useState<Array<{ timestamp: number; price: number }>>([]);
+  const [priceAnalytics, setPriceAnalytics] = useState({
+    currentPrice: vGoldPrice,
+    priceChange24h: 0,
+    priceChangePercent24h: 0,
+    priceChange7d: 0,
+    priceChangePercent7d: 0,
+    volatility7d: 2.5,
+    supportLevel: vGoldPrice * 0.95,
+    resistanceLevel: vGoldPrice * 1.05,
+  });
 
   // Theme colors
   const cardBg = useColorModeValue('white', 'gray.800');
@@ -79,11 +105,45 @@ const Portfolio = () => {
       setBorrowingValue(borrowingTotal);
       
       // Calculate total portfolio value (balance + lending - borrowing)
-      setPortfolioValue(vGoldBalance + lendingTotal - borrowingTotal);
+      const totalValue = vGoldBalance + lendingTotal - borrowingTotal;
+      setPortfolioValue(totalValue);
+      
+      // Simulate portfolio analytics
+      setPortfolioAnalytics({
+        totalValueChange24h: totalValue * 0.02,
+        totalValueChangePercent24h: 2.0,
+        totalValueChange7d: totalValue * 0.05,
+        totalValueChangePercent7d: 5.0,
+        bestPerformingAsset: 'vGold',
+        worstPerformingAsset: 'ALGO',
+        diversificationScore: 75,
+        riskScore: 45,
+        sharpeRatio: 1.2,
+      });
+      
+      // Generate mock price chart data
+      const now = Date.now();
+      const mockData = Array.from({ length: 30 }, (_, i) => ({
+        timestamp: now - (29 - i) * 24 * 60 * 60 * 1000,
+        price: vGoldPrice * (1 + (Math.random() - 0.5) * 0.1),
+      }));
+      setPriceChartData(mockData);
+      
+      // Update price analytics
+      setPriceAnalytics({
+        currentPrice: vGoldPrice,
+        priceChange24h: vGoldPrice * 0.01,
+        priceChangePercent24h: 1.0,
+        priceChange7d: vGoldPrice * 0.03,
+        priceChangePercent7d: 3.0,
+        volatility7d: 2.5,
+        supportLevel: vGoldPrice * 0.95,
+        resistanceLevel: vGoldPrice * 1.05,
+      });
     }
 
     return () => clearTimeout(timer);
-  }, [isConnected, vGoldBalance, lendPositions, borrowPositions]);
+  }, [isConnected, vGoldBalance, lendPositions, borrowPositions, vGoldPrice]);
 
   // Format currency values
   const formatNumber = (num: number) => {
@@ -225,6 +285,115 @@ const Portfolio = () => {
             </StatHelpText>
           </Stat>
         </SimpleGrid>
+        
+        <Divider my={6} />
+        
+        {/* Analytics Section */}
+        <Box>
+          <Heading size="lg" mb={4}>Portfolio Analytics</Heading>
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+            {/* Price Chart */}
+            <PriceChart
+              symbol="vGold"
+              data={priceChartData}
+              analytics={priceAnalytics}
+              showAnalytics={true}
+            />
+            
+            {/* Portfolio Performance */}
+            <Box
+              bg={cardBg}
+              borderRadius="lg"
+              p={6}
+              boxShadow="md"
+              border="1px"
+              borderColor={borderColor}
+            >
+              <VStack spacing={4} align="stretch">
+                <Heading size="md">Portfolio Performance</Heading>
+                
+                <Stat>
+                  <StatLabel>Total Value Change (24H)</StatLabel>
+                  <StatNumber color={portfolioAnalytics.totalValueChangePercent24h >= 0 ? 'green.500' : 'red.500'}>
+                    <StatArrow type={portfolioAnalytics.totalValueChangePercent24h >= 0 ? 'increase' : 'decrease'} />
+                    {Math.abs(portfolioAnalytics.totalValueChangePercent24h).toFixed(2)}%
+                  </StatNumber>
+                  <StatHelpText>
+                    ${formatNumber(Math.abs(portfolioAnalytics.totalValueChange24h))}
+                  </StatHelpText>
+                </Stat>
+                
+                <Stat>
+                  <StatLabel>Total Value Change (7D)</StatLabel>
+                  <StatNumber color={portfolioAnalytics.totalValueChangePercent7d >= 0 ? 'green.500' : 'red.500'}>
+                    <StatArrow type={portfolioAnalytics.totalValueChangePercent7d >= 0 ? 'increase' : 'decrease'} />
+                    {Math.abs(portfolioAnalytics.totalValueChangePercent7d).toFixed(2)}%
+                  </StatNumber>
+                  <StatHelpText>
+                    ${formatNumber(Math.abs(portfolioAnalytics.totalValueChange7d))}
+                  </StatHelpText>
+                </Stat>
+                
+                <Divider />
+                
+                <VStack spacing={3} align="stretch">
+                  <HStack justify="space-between">
+                    <Text fontWeight="medium">Best Performer:</Text>
+                    <Badge colorScheme="green" borderRadius="full">
+                      <HStack>
+                        <Icon as={FaTrendingUp} />
+                        <Text>{portfolioAnalytics.bestPerformingAsset}</Text>
+                      </HStack>
+                    </Badge>
+                  </HStack>
+                  
+                  <HStack justify="space-between">
+                    <Text fontWeight="medium">Worst Performer:</Text>
+                    <Badge colorScheme="red" borderRadius="full">
+                      <HStack>
+                        <Icon as={FaTrendingDown} />
+                        <Text>{portfolioAnalytics.worstPerformingAsset}</Text>
+                      </HStack>
+                    </Badge>
+                  </HStack>
+                  
+                  <HStack justify="space-between">
+                    <Text fontWeight="medium">Diversification Score:</Text>
+                    <Tooltip label="Higher score indicates better diversification">
+                      <Progress
+                        value={portfolioAnalytics.diversificationScore}
+                        colorScheme="blue"
+                        size="sm"
+                        width="100px"
+                        borderRadius="full"
+                      />
+                    </Tooltip>
+                  </HStack>
+                  
+                  <HStack justify="space-between">
+                    <Text fontWeight="medium">Risk Score:</Text>
+                    <Tooltip label="Lower score indicates lower risk">
+                      <Progress
+                        value={portfolioAnalytics.riskScore}
+                        colorScheme="orange"
+                        size="sm"
+                        width="100px"
+                        borderRadius="full"
+                      />
+                    </Tooltip>
+                  </HStack>
+                  
+                  <HStack justify="space-between">
+                    <Text fontWeight="medium">Sharpe Ratio:</Text>
+                    <Badge colorScheme="purple" borderRadius="full">
+                      {portfolioAnalytics.sharpeRatio.toFixed(2)}
+                    </Badge>
+                  </HStack>
+                </VStack>
+              </VStack>
+            </Box>
+          </SimpleGrid>
+        </Box>
         
         <Divider my={6} />
         

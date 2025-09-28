@@ -2,6 +2,7 @@ import { Telegraf, Markup } from 'telegraf';
 import { env } from './config/env';
 import { logger } from './utils/logger';
 import { registerCommands } from './commands';
+import { registerWebhook } from './server';
 
 async function bootstrap() {
   if (!env.BOT_TOKEN) {
@@ -15,6 +16,7 @@ async function bootstrap() {
 
   if (env.WEBHOOK_URL) {
     await bot.telegram.setWebhook(`${env.WEBHOOK_URL}/telegram/webhook`);
+    registerWebhook(bot);
     logger.info('Webhook set');
   } else {
     await bot.launch();

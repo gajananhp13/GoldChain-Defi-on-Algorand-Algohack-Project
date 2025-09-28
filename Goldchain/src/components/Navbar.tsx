@@ -295,7 +295,8 @@ const Navbar = ({ user, setUser }: NavbarProps) => {
               >
                 <HStack>
                   <Image 
-                    src="https://pawallet.blob.core.windows.net/media/pera-wallet-logo.svg" 
+                    src="/peralogo.png" 
+                    fallbackSrc="/peralogo.png"
                     boxSize="50px" 
                     alt="Pera Wallet" 
                   />
@@ -322,7 +323,7 @@ const Navbar = ({ user, setUser }: NavbarProps) => {
               
               <Box 
                 p={4} 
-                borderWidth="1px" 
+                borderWidth="1px"
                 borderRadius="md" 
                 onClick={() => handleWalletSelect('myalgo')}
                 className="card-hover"
@@ -334,6 +335,7 @@ const Navbar = ({ user, setUser }: NavbarProps) => {
                 <HStack>
                   <Image 
                     src="https://myalgo.com/assets/images/my-algo-logo-black.svg" 
+                    fallbackSrc="/peralogo.png"
                     boxSize="50px" 
                     alt="MyAlgo Wallet" 
                   />

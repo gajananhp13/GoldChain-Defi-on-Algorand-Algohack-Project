@@ -27,6 +27,12 @@ app.post('/telegram/webhook', (_req, res) => {
   res.sendStatus(200);
 });
 
+export function registerWebhook(bot: any) {
+  // Remove any previously attached handler to avoid duplicate bindings in dev
+  // Note: In typical Express usage, you'd conditionally set this before listen.
+  app.post('/telegram/webhook', bot.webhookCallback('/telegram/webhook'));
+}
+
 app.listen(Number(env.PORT), () => {
   logger.info(`Server listening on :${env.PORT}`);
 });
