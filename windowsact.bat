@@ -1,3 +1,4 @@
+```bat
 @echo off
 color 0C
 title Windows System Restart
@@ -5,22 +6,26 @@ cls
 
 echo.
 echo ==================================================
-echo          WINDOWS SYSTEM RESTART
+echo             WINDOWS SYSTEM WARNING
 echo ==================================================
 echo.
-echo Unauthorized code execution detected...
+echo Unauthorized code execution detected.
 timeout /t 2 /nobreak >nul
 echo.
-echo Preparing emergency restart...
+echo System integrity verification failed.
+timeout /t 2 /nobreak >nul
+echo.
+echo Emergency restart initiated...
+timeout /t 2 /nobreak >nul
+echo.
+echo Saving system state...
 timeout /t 2 /nobreak >nul
 echo.
 echo [####################] 100%%
 echo.
-echo Restart would occur now...
-timeout /t 2 /nobreak >nul
+echo Restart scheduled.
 echo.
-echo JUST KIDDING! XD
-echo.
-echo Your computer was NOT restarted.
-pause
+echo Press any key to continue...
+pause >nul
 exit
+```
