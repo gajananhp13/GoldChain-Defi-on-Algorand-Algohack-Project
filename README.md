@@ -1,22 +1,16 @@
-# 24Hproject
+## ye padh lo pehle achese 
 
-Welcome to your new AlgoKit project!
 
-This is your workspace root. A `workspace` in AlgoKit is an orchestrated collection of standalone projects (backends, smart contracts, frontend apps and etc).
+now You can fork the repo if you tried to clone it and zip it while starting the server the batfile may or may not be excuted idk 
+and  because when you zip and down the code the git status modified little clean coding practice that you should refer the book 'Handbook of Agile Software Craftsmanship by Robert C. Martin' 
+because there the few coding practices violation in your repositories 
 
-By default, `projects_root_path` parameter is set to `projects`. Which instructs AlgoKit CLI to create a new directory under `projects` directory when new project is instantiated via `algokit init` at the root of the workspace.
+1 pushing the env file (which consist of the mongo URL {any random can sen 3 millions queries to the db}) for various repos 	
+2 pushing node-modules (thousands of packages are delivered though set) 
+3. services are written in either services or side functions in the utils folder (if its frontend , you can use a good folder structure which has dom, eventlisteners, server, interceptors , api)
+4. your one package.json has a deprecated version , so kindly check it cause there might chances that will through error on other browsers apart from chrome(v8 doesnt support few libs read the chromium docs)
+5. there a wrong deployment a repo 
+there might be more issues 
 
-## Getting Started
 
-To get started refer to `README.md` files in respective sub-projects in the `projects` directory.
-
-To learn more about algokit, visit [documentation](https://github.com/algorandfoundation/algokit-cli/blob/main/docs/algokit.md).
-
-### GitHub Codespaces
-
-To get started execute:
-
-1. `algokit generate devcontainer` - invoking this command from the root of this repository will create a `devcontainer.json` file with all the configuration needed to run this project in a GitHub codespace. [Run the repository inside a codespace](https://docs.github.com/en/codespaces/getting-started/quickstart) to get started.
-2. `algokit init` - invoke this command inside a github codespace to launch an interactive wizard to guide you through the process of creating a new AlgoKit project
-
-Powered by [Copier templates](https://copier.readthedocs.io/en/stable/).
+thats it figure out ! and drop a pull request if have error , theres a lot of mess in my code too 
